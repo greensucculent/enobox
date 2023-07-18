@@ -18,3 +18,5 @@ typedef struct {
 } _pipeline;
 
 #endif
+
+_pipeline *pipeline_new();
