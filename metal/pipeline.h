@@ -15,9 +15,6 @@ typedef struct {
   // Metal resources
   id<MTLComputePipelineState> pipeline;
   id<MTLCommandQueue> commandQueue;
-
-  // Buffers that will be supplied as arguments to the metal function
-  // NSMutableArray *buffers;
 } _pipeline;
 
 #endif
