@@ -20,7 +20,7 @@ func init() {
 }
 
 // Buffer contains a slice that wraps a block of memory that can be sent to the GPU and used to run
-// metal code.
+// a metal function.
 type Buffer[T any] struct {
 	// Block of memory accessible to both the CPU and GPU. Only the contents of the underlying array
 	// should be modified. The length/capacity of the slice and which block of memory it points to
@@ -28,7 +28,7 @@ type Buffer[T any] struct {
 	Data []T
 
 	// Id of the buffer, as assigned by the underlying code that creates and manages it. This is
-	// used to send the buffer as an argument to the metal code.
+	// used to send the buffer as an argument to the metal function.
 	id int
 }
 
@@ -57,7 +57,7 @@ func NewPipeline(metalSource, funcName string) Pipeline {
 	}
 }
 
-// A BufferIder can advertise the Id that references its buffer in metal code.
+// A BufferIder can advertise the Id that references the metal buffer.
 type BufferIder interface {
 	// BufferId returns the Id of the buffer that was created for sending data to the GPU. This Id
 	// is used when running the computation pipeline.
