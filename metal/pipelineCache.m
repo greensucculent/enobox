@@ -39,7 +39,7 @@ int pipelineCache_cache(_pipeline *pipeline) {
 _pipeline *pipelineCache_retrieve(int pipelineId) {
   _pipeline *pipeline = nil;
 
-  pipeline = pipeline_new();
+  pipeline = pipeline_alloc();
 
   @synchronized(pipelineCache) {
     NSCAssert(pipelineId >= 1, @"Invalid pipeline Id %d", pipelineId);
@@ -50,7 +50,7 @@ _pipeline *pipelineCache_retrieve(int pipelineId) {
     // convert it into a 0-based index to retrieve it from the cache.
     int index = pipelineId - 1;
 
-    // Retrieve the decode the encoded struct.
+    // Retrieve and decode the encoded struct.
     NSValue *value = pipelineCache[index];
     [value getValue:pipeline];
   }

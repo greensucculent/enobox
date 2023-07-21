@@ -4,7 +4,7 @@
 #include "pipeline.h"
 
 // Initialize a new pipeline.
-_pipeline *pipeline_new() {
+_pipeline *pipeline_alloc() {
   _pipeline *pipeline = nil;
 
   pipeline = malloc(sizeof(_pipeline));

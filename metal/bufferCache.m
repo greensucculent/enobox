@@ -12,7 +12,7 @@ void bufferCache_init() {
 }
 
 // Add a buffer to the buffer cache.
-int bufferCache_cache(id<MTLBuffer> buffer) {
+int bufferCache_cache(_buffer *buffer) {
   NSCAssert(buffer != nil, @"Missing buffer to cache");
 
   int bufferId = 0;
@@ -22,7 +22,10 @@ int bufferCache_cache(id<MTLBuffer> buffer) {
       bufferCache_init();
     }
 
-    [bufferCache addObject:buffer];
+    // We cannot store the struct into the cache directly. Instead, we need to
+    // encode it into an NSValue and store that.
+    NSValue *value = [NSValue valueWithBytes:buffer objCType:@encode(_buffer)];
+    [bufferCache addObject:value];
 
     // A buffer Id is its 1-based index in the array.
     bufferId = [bufferCache count];
@@ -32,20 +35,24 @@ int bufferCache_cache(id<MTLBuffer> buffer) {
 }
 
 // Retrieve a buffer (block of memory) from the buffer cache.
-id<MTLBuffer> bufferCache_retrieve(int bufferId) {
-  id<MTLBuffer> buffer = nil;
+_buffer *bufferCache_retrieve(int bufferId) {
+  _buffer *buffer = nil;
+
+  buffer = malloc(sizeof(_buffer));
+  NSCAssert(buffer != nil, @"Failed to initialize new buffer");
 
   @synchronized(bufferCache) {
-    if (bufferId < 1 || bufferId > [bufferCache count]) {
-      NSCAssert(false, @"Invalid buffer Id %d", bufferId);
-    }
+    NSCAssert(bufferId >= 1, @"Invalid buffer Id %d", bufferId);
+    NSCAssert(bufferId <= [bufferCache count], @"Invalid buffer Id %d",
+              bufferId);
 
     // A buffer Id is a buffer's 1-based index in the cache. We need to convert
     // it into a 0-based index to retrieve it from the cache.
     int index = bufferId - 1;
 
-    buffer = bufferCache[index];
-    NSCAssert(buffer != nil, @"Failed to find buffer in cache");
+    // Retrieve and decode the encoded struct.
+    NSValue *value = bufferCache[index];
+    [value getValue:buffer];
   }
 
   return buffer;

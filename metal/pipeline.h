@@ -17,6 +17,6 @@ typedef struct {
   id<MTLCommandQueue> commandQueue;
 } _pipeline;
 
-_pipeline *pipeline_new();
+_pipeline *pipeline_alloc();
 
 #endif
