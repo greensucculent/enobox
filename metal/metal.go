@@ -3,6 +3,9 @@
 
 package metal
 
+// frameworks not included:
+// -framework Cocoa
+
 /*
 #cgo LDFLAGS: -framework Metal -framework CoreGraphics -framework Foundation
 #include "metal.h"
@@ -72,12 +75,11 @@ func NewBuffer[T any](numElems int) Buffer[T] {
 		return Buffer[T]{}
 	}
 
-	size := sizeof[T]()
-	bufferSize := numElems * size
+	elemSize := sizeof[T]()
 
 	// Allocate memory for the new buffer, and then retrieve a pointer to the beginning of the new
 	// memory using the buffer's Id.
-	bufferId := C.metal_newBuffer(C.int(bufferSize))
+	bufferId := C.metal_newBuffer(C.int(elemSize * numElems))
 	newBuffer := C.metal_retrieveBuffer(bufferId)
 
 	return Buffer[T]{
