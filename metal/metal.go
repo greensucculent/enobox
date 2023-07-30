@@ -22,23 +22,6 @@ func init() {
 	C.metal_init()
 }
 
-// Buffer contains a slice that wraps a block of memory that can be sent to the GPU and used to run
-// a metal function.
-type Buffer[T any] struct {
-	// Block of memory accessible to both the CPU and GPU. Only the contents of the underlying array
-	// should be modified. The length/capacity of the slice and which block of memory it points to
-	// should not be altered,
-	Data []T
-
-	// Id of the buffer, as assigned by the underlying code that creates and manages it. This is
-	// used to send the buffer as an argument to the metal function.
-	id int
-}
-
-// BufferId returns the Id of the buffer. This Id is assigned by the process that creates and
-// manages the buffer's memory.
-func (b Buffer[T]) BufferId() int { return b.id }
-
 // A Function executes computational processes on the default GPU.
 type Function struct {
 	// Id of the metal function, as assigned by the underlying code that creates and manages it.
@@ -60,19 +43,21 @@ func NewFunction(metalSource, funcName string) Function {
 	}
 }
 
-// A BufferIder can advertise the Id that references the metal buffer.
-type BufferIder interface {
-	// BufferId returns the Id of the buffer that was created for sending data to the GPU. This Id
-	// is used when running the computation function.
-	BufferId() int
-}
+// A BufferId references a specific metal buffer created with NewBuffer.
+type BufferId int
 
-// NewBuffer allocates a block of memory that is accessible to both the CPU and GPU. The returned
-// Buffer contains a slice that wraps the new memory and has a length equal to numElems, and the
-// underlying memory of the slice has (numElems * sizeof(T)) bytes.
-func NewBuffer[T any](numElems int) Buffer[T] {
+// NewBuffer allocates a block of memory that is accessible to both the CPU and GPU. It returns a
+// unique Id for the buffer and a slice that wraps the new memory and has a len and cap equal to
+// numElems.
+//
+// The Id is used to reference the buffer as an argument for the metal function.
+//
+// Only the contents of the slice should be modified. Its length and capacity and the block of
+// memory that it points to should not be altered. The slice's length and capacity are equal to
+// numElems, and its underlying memory has (numElems * sizeof(T)) bytes.
+func NewBuffer[T any](numElems int) (BufferId, []T) {
 	if numElems <= 0 {
-		return Buffer[T]{}
+		return 0, nil
 	}
 
 	elemSize := sizeof[T]()
@@ -82,21 +67,18 @@ func NewBuffer[T any](numElems int) Buffer[T] {
 	bufferId := C.metal_newBuffer(C.int(elemSize * numElems))
 	newBuffer := C.metal_retrieveBuffer(bufferId)
 
-	return Buffer[T]{
-		Data: toSlice[T](newBuffer, numElems),
-		id:   int(bufferId),
-	}
+	return BufferId(bufferId), toSlice[T](newBuffer, numElems)
 }
 
 // Run executes the computational function on the GPU. buffers is a list of buffers that have a
 // buffer Id, which is used to retrieve the correct block of memory for the buffer. Each buffer is
 // supplied as an argument to the metal function in the order given here.
-func Run(function Function, buffers ...BufferIder) {
+func Run(function Function, buffers ...BufferId) {
 
 	// Make a list of buffer Ids.
 	var bufferIds []C.int
 	for _, buffer := range buffers {
-		bufferIds = append(bufferIds, C.int(buffer.BufferId()))
+		bufferIds = append(bufferIds, C.int(buffer))
 	}
 
 	// Get a pointer to the beginning of the list of buffer Ids (if we have any).
