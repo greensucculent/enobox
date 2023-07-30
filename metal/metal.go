@@ -39,23 +39,23 @@ type Buffer[T any] struct {
 // manages the buffer's memory.
 func (b Buffer[T]) BufferId() int { return b.id }
 
-// A Pipeline executes computational processes on the default GPU.
-type Pipeline struct {
-	// Id of the pipeline, as assigned by the underlying code that creates and manages it. This is
-	// be used to run the pipeline and execute its computational process on the GPU.
+// A Function executes computational processes on the default GPU.
+type Function struct {
+	// Id of the metal function, as assigned by the underlying code that creates and manages it.
+	// This is used to run the function and execute its computational process on the GPU.
 	id int
 }
 
-// NewPipeline sets up a new pipeline that will run on the default GPU. The pipeline is built with
-// the specified function in the provided metal code.
-func NewPipeline(metalSource, funcName string) Pipeline {
+// NewFunction sets up a new function that will run on the default GPU. It is built with the
+// specified function in the provided metal code.
+func NewFunction(metalSource, funcName string) Function {
 	src := C.CString(metalSource)
 	defer C.free(unsafe.Pointer(src))
 
 	name := C.CString(funcName)
 	defer C.free(unsafe.Pointer(name))
 
-	return Pipeline{
+	return Function{
 		id: int(C.metal_newFunction(src, name)),
 	}
 }
@@ -63,7 +63,7 @@ func NewPipeline(metalSource, funcName string) Pipeline {
 // A BufferIder can advertise the Id that references the metal buffer.
 type BufferIder interface {
 	// BufferId returns the Id of the buffer that was created for sending data to the GPU. This Id
-	// is used when running the computation pipeline.
+	// is used when running the computation function.
 	BufferId() int
 }
 
@@ -88,10 +88,10 @@ func NewBuffer[T any](numElems int) Buffer[T] {
 	}
 }
 
-// Run executes the computation function stored in pipeline on the GPU. buffers is a list of buffers
-// that have a buffer Id, which is used to retrieve the correct block of memory for the buffer. Each
-// buffer is supplied as an argument to the pipeline's metal function in the order given here.
-func Run(pipeline Pipeline, buffers ...BufferIder) {
+// Run executes the computational function on the GPU. buffers is a list of buffers that have a
+// buffer Id, which is used to retrieve the correct block of memory for the buffer. Each buffer is
+// supplied as an argument to the metal function in the order given here.
+func Run(function Function, buffers ...BufferIder) {
 
 	// Make a list of buffer Ids.
 	var bufferIds []C.int
@@ -106,7 +106,7 @@ func Run(pipeline Pipeline, buffers ...BufferIder) {
 	}
 
 	// Run the computation on the GPU.
-	C.metal_runFunction(C.int(pipeline.id), bufferPtr, C.int(len(bufferIds)))
+	C.metal_runFunction(C.int(function.id), bufferPtr, C.int(len(bufferIds)))
 }
 
 // sizeof returns the size in bytes of the generic type T.
