@@ -15,7 +15,7 @@ void metal_runFunction(int pipelineId, int *bufferIds, int numBufferIds);
 
 // Functions that must be called once for every buffer used as an argument to a
 // metal function
-int metal_newBuffer(int numElems, int elemSize);
+int metal_newBuffer(int size);
 void *metal_retrieveBuffer(int bufferId);
 
 #endif
